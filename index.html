@@ -148,7 +148,6 @@ svg text.cn{font-size:11px;fill:var(--muted)}
 .stattbl td{text-align:right;padding:6px 0;border-top:1px solid var(--rule)}
 .stattbl th:first-child,.stattbl td:first-child{text-align:left}
 .tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);border:1.5px solid var(--accent);border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:2px}
-body.setmode .reading,body.setmode section.block:not(#mix),body.setmode footer,body.setmode #setbtn,body.setmode .lead{display:none}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowname{font-size:22px;font-weight:600;line-height:1.2;margin:6px 0 4px;overflow-wrap:anywhere}
 .nowrow{display:flex;align-items:center;justify-content:space-between;gap:16px}
@@ -182,6 +181,7 @@ body.setmode .reading,body.setmode section.block:not(#mix),body.setmode footer,b
 .setfoot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding-top:14px}
 .ren{display:flex;gap:8px;align-items:center;flex:1}
 .ren input{font:inherit;font-size:14px;color:var(--fg);background:transparent;border:0;border-bottom:1.5px solid var(--fg);border-radius:0;padding:3px 0;flex:1;min-width:0}
+.access{padding-top:14px}
 footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid var(--rule)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -195,7 +195,6 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     <div class="actions" id="startbtns">
       <button class="btn" id="mic">Gravar com o microfone</button>
       <button class="btn ghost" id="pick">Escolher gravação</button>
-      <button class="btn ghost" id="setbtn" hidden>Modo set</button>
     </div>
     <input class="hidden-input" type="file" id="file">
     <div class="recpanel" id="recpanel" hidden>
@@ -212,12 +211,6 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     <p class="status" id="status"></p>
   </header>
 
-  <section class="block" id="mix" hidden>
-    <div class="histhead"><h2>Modo set<span class="tag">só tu</span></h2><button class="lnk" id="mxexit" type="button">sair do modo set</button></div>
-    <div id="mxnow"></div>
-    <div id="mxnext"></div>
-  </section>
-
   <section class="reading">
     <div class="read">
       <div class="num"><span id="bpm">—</span><span class="unit">bpm</span></div>
@@ -231,6 +224,12 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
       <div class="gauge"><i id="keyconf"></i></div>
       <div class="gaugelbl">clareza da tonalidade</div>
     </div>
+  </section>
+
+  <section class="block" id="mix" hidden>
+    <div class="histhead"><h2>O que entra a seguir<span class="tag">só tu</span></h2></div>
+    <div id="mxnow"></div>
+    <div id="mxnext"></div>
   </section>
 
   <section class="block">
@@ -266,6 +265,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
   </section>
 
   <footer id="meta"></footer>
+  <p class="access"><button class="lnk" id="statsopen" type="button">código de acesso</button></p>
 </main>
 
 <script>
@@ -669,6 +669,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     $('statsform').onsubmit=e=>{e.preventDefault(); const c=$('statscode').value.trim(); if(c) load(c,true);};
     $('statsout').onclick=()=>{try{localStorage.removeItem('kb_admin');}catch(e){} dispatchEvent(new Event('kb-admin')); $('statsbody').textContent=''; $('statsnote').textContent=''; $('statsform').hidden=false; $('statsout').hidden=true; if(location.hash!=='#stats') $('stats').hidden=true;};
     function init(){ const c=get(); if(location.hash==='#stats'||c){ $('stats').hidden=false; if(c){ $('statsform').hidden=true; load(c,false); } } }
+    $('statsopen').onclick=()=>{ $('stats').hidden=false; $('stats').scrollIntoView({behavior:'smooth',block:'start'}); if(!get()) setTimeout(()=>{try{$('statscode').focus();}catch(e){}},300); };
     addEventListener('hashchange',init); init();
   })();
 
@@ -757,7 +758,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     try{ await player.play(); playingId=rec.id; }catch(e){ playingId=null; say('Não deu para reproduzir ('+(e&&e.message||e)+').',true); }
     renderHist();
   }
-  function showRec(rec){ currentId=rec.id; render(recToR(rec),rec.name); renderHist(); }
+  function showRec(rec){ currentId=rec.id; render(recToR(rec),rec.name); renderHist(); if(typeof setOn==='function'&&setOn()) renderNow(); }
   $('sort').onchange=e=>{sortMode=e.target.value;renderHist();};
   store.listeners.push(()=>{ renderHist(); if(!everAnalysed&&!currentId&&store.recs.length){ const latest=store.recs.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0]; showRec(latest); } });
   initStore();
@@ -773,7 +774,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
   const mk=(t,cls,txt)=>{const e=document.createElement(t); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e;};
   const lnk=(txt,fn)=>{const b=mk('button','lnk',txt); b.type='button'; b.onclick=fn; return b;};
   const hasNow=()=>mix.bpm>=50&&mix.bpm<=250;
-  const setOn=()=>isPriv()&&document.body.classList.contains('setmode');
+  const setOn=()=>isPriv();
   const saveMix=()=>{ try{localStorage.setItem('kb_mix',JSON.stringify(mix));}catch(e){} };
   const clampPitch=v=>Math.max(-mix.range,Math.min(mix.range,Math.round(v*2)/2));
   async function updateRec(rec){
@@ -793,58 +794,61 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     }
     act.prepend(lnk('A tocar',()=>setPlaying(rec,0)), lnk('Mudar nome',()=>{renameId=rec.id;confirmId=null;renderHist();}));
   }
-  function enterSet(on){
-    document.body.classList.toggle('setmode',!!on); $('mix').hidden=!on;
-    try{ if(on) localStorage.setItem('kb_set','1'); else localStorage.removeItem('kb_set'); }catch(e){}
-    if(on){ renderNow(); window.scrollTo({top:0}); }
-  }
   // rec: gravação do histórico (ou objeto com bpm, root, mode, name); pitch: fração a que o disco entrou
   function setPlaying(rec,pitch){
     const k=keyObj(rec.root,rec.mode);
     mix.bpm=rec.bpm; mix.key=k.camelot; mix.from=rec.id||null; mix.name=rec.name||'Sem nome'; mix.pitch=clampPitch((pitch||0)*100);
     openId=null; pickOpen=false; handOpen=false; saveMix();
-    if(!setOn()) enterSet(true); else { renderNow(); window.scrollTo({top:0,behavior:'smooth'}); }
+    renderNow(); $('mix').scrollIntoView({behavior:'smooth',block:'start'});
   }
   function renderNow(){
     if(!setOn()) return;
     const host=$('mxnow'); host.textContent='';
-    if(hasNow()){
-      host.appendChild(mk('div','eyebrow','A tocar agora'));
-      host.appendChild(mk('div','nowname',mix.name||'Escrito à mão'));
-      const row=mk('div','nowrow'), left=mk('div'), num=mk('span','nownum'), right=mk('div','nowkey');
-      left.append(num,mk('span',null,'bpm')); right.append(mk('span','badge',mix.key),mk('span',null,SHORT[mix.key])); row.append(left,right); host.appendChild(row);
-      const cover=mk('div','small'); host.appendChild(cover);
-      const fad=mk('div','fader'), fh=mk('div','fadhead'), fl=mk('div'), fv=mk('span','fadval'), inp=mk('input'), sc=mk('div','fadscale');
-      fl.append(mk('b',null,'Pitch deste disco'),mk('div','small','arrasta até onde tens o fader'));
-      fh.append(fl,fv);
-      inp.type='range'; inp.min=-mix.range; inp.max=mix.range; inp.step=0.5; inp.value=mix.pitch; inp.id='mxfader'; inp.setAttribute('aria-label','Pitch do disco que está a tocar, em percentagem');
-      sc.append(mk('span',null,'−'+mix.range+' %'),mk('span',null,'0'),mk('span',null,'+'+mix.range+' %'));
-      fad.append(fh,inp,sc); host.appendChild(fad);
-      const paint=()=>{ num.textContent=bpmTxt(mix.bpm*(1+mix.pitch/100)); fv.textContent=pct(mix.pitch/100); cover.textContent='Na capa: '+bpmTxt(mix.bpm)+' BPM'; inp.setAttribute('aria-valuetext',pct(mix.pitch/100)); };
-      inp.addEventListener('input',()=>{ mix.pitch=parseFloat(inp.value)||0; saveMix(); paint(); renderNext(); });
-      paint();
-    } else {
-      host.appendChild(mk('div','eyebrow','A tocar agora'));
-      host.appendChild(mk('p','histnote','Diz que disco está a tocar: grava-o com o microfone, escolhe um do histórico ou escreve os valores da capa.'));
-      if(store.recs.length&&!handOpen) pickOpen=true;
-    }
-    const links=mk('div','nowlinks');
-    links.append(lnk(pickOpen?'fechar a lista':(hasNow()?'trocar de disco':'escolher do histórico'),()=>{pickOpen=!pickOpen;handOpen=false;renderNow();}),
-                 lnk(handOpen?'fechar':'escrever à mão',()=>{handOpen=!handOpen;pickOpen=false;renderNow();}));
-    host.appendChild(links);
-    if(pickOpen){
-      if(!store.recs.length) host.appendChild(mk('p','histnote','O histórico ainda está vazio. Grava o primeiro disco.'));
-      else { const ul=mk('div'); for(const rec of sorted()){ const k=keyObj(rec.root,rec.mode), b=mk('button','srow'); b.type='button'; const m=mk('span','sm'); m.append(mk('span','sn',rec.name||'Sem nome'),mk('span','small',bpmTxt(rec.bpm)+' BPM, '+k.camelot)); b.append(m); b.onclick=()=>setPlaying(rec,0); ul.appendChild(b); } host.appendChild(ul); }
-    }
-    if(handOpen){
-      const g=mk('div','mixin'), l1=mk('label',null,'BPM na capa'), l2=mk('label',null,'Key na capa'), ib=mk('input'), sel=mk('select');
+    // escrever os valores da capa é o caminho normal: não é preciso gravar o disco para chegar ao seguinte
+    const manual=handOpen||!hasNow()||!mix.from;
+    host.appendChild(mk('div','eyebrow','A tocar agora'));
+    const nameEl=mk('div','nowname'); host.appendChild(nameEl);
+    let ib=null, sel=null;
+    if(manual){
+      const g=mk('div','mixin'), l1=mk('label',null,'BPM na capa, a pitch 0'), l2=mk('label',null,'Key na capa');
+      ib=mk('input'); sel=mk('select');
       ib.type='text'; ib.inputMode='decimal'; ib.autocomplete='off'; ib.placeholder='125'; ib.id='mxbpm'; ib.value=hasNow()?bpmTxt(mix.bpm):'';
       sel.id='mxkey'; for(const L of ['A','B']) for(let n=1;n<=12;n++){ const o=mk('option',null,n+L+'  '+SHORT[n+L]); o.value=n+L; sel.appendChild(o); } sel.value=mix.key;
       l1.appendChild(ib); l2.appendChild(sel); g.append(l1,l2); host.appendChild(g);
-      const done=lnk('usar estes valores',()=>{ const v=parseFloat(ib.value.replace(',','.')); if(!(v>=50&&v<=250)){ say('Escreve um BPM entre 50 e 250.',true); return; } const c=sel.value, L=c.slice(-1), n=parseInt(c); const root=Object.keys(L==='B'?CM:Cm).find(r=>(L==='B'?CM:Cm)[r]===c); setPlaying({bpm:v,root:+root,mode:L==='B'?'major':'minor',name:'Escrito à mão'},0); });
-      host.appendChild(done);
     }
-    renderNext();
+    const big=mk('div'); host.appendChild(big);
+    const row=mk('div','nowrow'), left=mk('div'), num=mk('span','nownum'), right=mk('div','nowkey'), badge=mk('span','badge'), shortEl=mk('span');
+    left.append(num,mk('span',null,'bpm')); right.append(badge,shortEl); row.append(left,right); big.appendChild(row);
+    const cover=mk('div','small'); big.appendChild(cover);
+    const fad=mk('div','fader'), fh=mk('div','fadhead'), fl=mk('div'), fv=mk('span','fadval'), inp=mk('input'), sc=mk('div','fadscale');
+    fl.append(mk('b',null,'Pitch deste disco'),mk('div','small','arrasta até onde tens o fader'));
+    fh.append(fl,fv);
+    inp.type='range'; inp.min=-mix.range; inp.max=mix.range; inp.step=0.5; inp.value=mix.pitch; inp.id='mxfader'; inp.setAttribute('aria-label','Pitch do disco que está a tocar, em percentagem');
+    sc.append(mk('span',null,'−'+mix.range+' %'),mk('span',null,'0'),mk('span',null,'+'+mix.range+' %'));
+    fad.append(fh,inp,sc); big.appendChild(fad);
+    const paint=()=>{
+      const ok=hasNow(); big.hidden=!ok;
+      nameEl.textContent=ok?(mix.name||'Escrito à mão'):'Que disco está a tocar?';
+      if(!ok) return;
+      num.textContent=bpmTxt(mix.bpm*(1+mix.pitch/100)); badge.textContent=mix.key; shortEl.textContent=SHORT[mix.key];
+      fv.textContent=pct(mix.pitch/100); cover.textContent='Na capa: '+bpmTxt(mix.bpm)+' BPM'; inp.setAttribute('aria-valuetext',pct(mix.pitch/100));
+    };
+    inp.addEventListener('input',()=>{ mix.pitch=parseFloat(inp.value)||0; saveMix(); paint(); renderNext(); });
+    if(manual){
+      const typed=()=>{ mix.from=null; mix.name='Escrito à mão'; openId=null; saveMix(); paint(); renderNext(); };
+      ib.addEventListener('input',()=>{ const v=parseFloat(ib.value.replace(',','.')); mix.bpm=(v>=50&&v<=250)?v:null; typed(); });
+      sel.addEventListener('change',()=>{ mix.key=sel.value; typed(); });
+    }
+    const links=mk('div','nowlinks');
+    links.appendChild(lnk(pickOpen?'fechar a lista':'escolher do histórico',()=>{pickOpen=!pickOpen;renderNow();}));
+    if(!manual) links.appendChild(lnk('escrever à mão',()=>{handOpen=true;pickOpen=false;renderNow();}));
+    const cur=currentId&&currentId!==mix.from&&store.recs.find(r=>r.id===currentId); if(cur) links.appendChild(lnk('usar o disco analisado em cima',()=>setPlaying(cur,0)));
+    host.appendChild(links);
+    if(pickOpen){
+      if(!store.recs.length) host.appendChild(mk('p','histnote','O histórico deste browser está vazio.'));
+      else { const ul=mk('div'); for(const rec of sorted()){ const k=keyObj(rec.root,rec.mode), b=mk('button','srow'); b.type='button'; const m=mk('span','sm'); m.append(mk('span','sn',rec.name||'Sem nome'),mk('span','small',bpmTxt(rec.bpm)+' BPM, '+k.camelot)); b.append(m); b.onclick=()=>setPlaying(rec,0); ul.appendChild(b); } host.appendChild(ul); }
+    }
+    paint(); renderNext();
   }
   function why(m,playKey){
     const cover='Na capa: '+bpmTxt(m.rec.bpm)+' BPM, '+m.rec.camelot+'. ';
@@ -855,7 +859,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
   }
   function renderNext(){
     if(!setOn()) return;
-    const host=$('mxnext'); host.textContent=''; if(!hasNow()) return;
+    const host=$('mxnext'); host.textContent=''; if(!hasNow()){ host.appendChild(mk('p','histnote','Escreve o BPM e a key da capa. Depois arrasta o pitch e a conta para o disco seguinte faz-se sozinha.')); return; }
     const recs=store.recs.filter(r=>r.id!==mix.from).map(r=>({id:r.id,name:r.name||'Sem nome',bpm:r.bpm,camelot:keyObj(r.root,r.mode).camelot,src:r}));
     const pl=MixLogic.plan(mix.bpm,mix.key,recs,{pitch:mix.pitch/100,range:mix.range,cents:25});
     const head=mk('div','nexthead'); head.append(mk('div','eyebrow','A seguir, da tua mala'),mk('div','small','pitch a pôr')); host.appendChild(head);
@@ -887,14 +891,10 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     host.appendChild(foot);
   }
   function initMix(){
-    const on=isPriv(); $('setbtn').hidden=!on;
-    let want=false; try{ want=on&&!!localStorage.getItem('kb_set'); }catch(e){}
-    if(!on){ renameId=null; document.body.classList.remove('setmode'); $('mix').hidden=true; }
-    else if(want&&!setOn()) enterSet(true);
+    const on=isPriv(); $('mix').hidden=!on;
+    if(!on) renameId=null; else renderNow();
     renderHist();
   }
-  $('setbtn').onclick=()=>enterSet(true);
-  $('mxexit').onclick=()=>enterSet(false);
   addEventListener('kb-admin',initMix);
   store.listeners.push(()=>{ if(setOn()) renderNow(); });
   initMix();
@@ -927,7 +927,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     render(recToR(rec),label);
     say('Pronto. Se o pulso parecer lento ou rápido demais, usa ÷2 ou ×2.');
     if(store.mode!=='none'){
-      try{ await saveRec(rec,blob); currentId=rec.id; renderHist(); if(setOn()) setPlaying(rec,0); }
+      try{ await saveRec(rec,blob); currentId=rec.id; renderHist(); if(setOn()) renderNow(); }
       catch(e){ console.warn(e); say('Analisado, mas não deu para guardar no histórico ('+(e&&(e.message||e.code)||e)+').',true); }
     }
   }
