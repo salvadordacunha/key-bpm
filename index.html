@@ -140,13 +140,17 @@ svg text.cn{font-size:11px;fill:var(--muted)}
 .q{color:var(--muted)}
 .stats-in{font:inherit;font-size:15px;padding:10px 12px;border:1.5px solid var(--fg);border-radius:4px;background:transparent;color:var(--fg);min-width:0;flex:1 1 160px;max-width:240px}
 .stats-in:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.statnums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 18px}
-.statnums b{display:block;font-size:40px;font-weight:800;line-height:1;font-variation-settings:"opsz" 96,"wdth" 78;font-variant-numeric:tabular-nums}
+.statnums{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0 4px}
+.statnums b{display:block;font-size:clamp(28px,9vw,40px);font-weight:800;line-height:1;font-variation-settings:"opsz" 96,"wdth" 78;font-variant-numeric:tabular-nums}
 .statnums span{font-size:13px;color:var(--muted)}
 .stattbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:18px}
 .stattbl th{font-weight:500;color:var(--muted);text-align:right;padding:6px 0}
 .stattbl td{text-align:right;padding:6px 0;border-top:1px solid var(--rule)}
 .stattbl th:first-child,.stattbl td:first-child{text-align:left}
+.stattbl td small{display:block;color:var(--muted);font-size:12px}
+.stattbl tr.off td{color:var(--muted)}
+.stath{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:22px 0 4px}
+.statnums{border-bottom:1px solid var(--rule);padding-bottom:18px}
 .tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);border:1.5px solid var(--accent);border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:2px}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nowname{font-size:22px;font-weight:600;line-height:1.2;margin:6px 0 4px;overflow-wrap:anywhere}
@@ -644,21 +648,34 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
       rows.forEach(r=>{const tr=el('tr'); r.forEach(c=>tr.appendChild(el('td',String(c)))); t.appendChild(tr);});
       return t;
     }
+    const when=iso=>{ if(!iso) return 'nunca'; const t=new Date(iso), n=new Date(), d0=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+      const dd=Math.round((d0(n)-d0(t))/864e5), hm=t.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+      return dd===0?'hoje, '+hm:dd===1?'ontem, '+hm:t.toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'})+', '+hm; };
+    const dev=x=>x==='telemovel'?'telemóvel':x==='pc'?'computador':(x||'?');
+    function head(txt){ const h=el('h3',txt); h.className='stath'; return h; }
     function show(d){
       const b=$('statsbody'); b.textContent='';
+      const t=d.total||{}, ps=d.pessoas||[], dias=d.dias||[];
       const n=el('div'); n.className='statnums';
-      [['pessoas','pessoas'],['aberturas','aberturas'],['analises','análises']].forEach(([k,l])=>{const c=el('div'); c.appendChild(el('b',String((d.total&&d.total[k])||0))); c.appendChild(el('span',l)); n.appendChild(c);});
+      [[t.pessoas,'pessoas'],[t.hoje,'hoje'],[t.aberturas,'aberturas'],[t.analises,'análises']].forEach(([v,l])=>{const c=el('div'); c.appendChild(el('b',String(v||0))); c.appendChild(el('span',l)); n.appendChild(c);});
       b.appendChild(n);
-      const dias=d.dias||[];
-      if(dias.length){ b.appendChild(table(['Dia','Pessoas','Aberturas','Análises'],dias.map(x=>[new Date(x.dia+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}),x.pessoas,x.aberturas,x.analises]))); }
-      if((d.dispositivos||[]).length) b.appendChild(table(['Dispositivo','Pessoas'],d.dispositivos.map(x=>[x.device==='telemovel'?'Telemóvel':x.device==='pc'?'Computador':(x.device||'?'),x.pessoas])));
-      if((d.origens||[]).length) b.appendChild(table(['Origem','Aberturas'],d.origens.map(x=>[x.origem==='direto'?'Direto (link, bio, app)':x.origem,x.aberturas])));
-      $('statsnote').textContent=dias.length?'Tabela por dia: últimos 30 dias. Este dispositivo não é contado.':'Ainda sem visitas registadas. Este dispositivo não é contado.';
+      if(ps.length){
+        b.appendChild(head('Quem usa'));
+        const tb=el('table'); tb.className='stattbl';
+        const hr=el('tr'); ['Pessoa','Último acesso','Aberturas','Análises'].forEach(h=>hr.appendChild(el('th',h))); tb.appendChild(hr);
+        ps.forEach(p=>{ const tr=el('tr'); if(!p.analises) tr.className='off';
+          const c=el('td','Pessoa '+p.n); c.appendChild(el('small',dev(p.device)+' · desde '+new Date(p.primeiro).toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit'}))); tr.appendChild(c);
+          tr.appendChild(el('td',when(p.ultimo))); tr.appendChild(el('td',String(p.aberturas))); tr.appendChild(el('td',String(p.analises))); tb.appendChild(tr); });
+        b.appendChild(tb);
+      }
+      if(dias.length){ b.appendChild(head('Por dia')); b.appendChild(table(['Dia','Pessoas','Aberturas','Análises'],dias.map(x=>[new Date(x.dia+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}),x.pessoas,x.aberturas,x.analises]))); }
+      if((d.origens||[]).length){ b.appendChild(head('De onde vêm')); b.appendChild(table(['Origem','Aberturas'],d.origens.map(x=>[x.origem==='direto'?'Direto (link, bio, app)':x.origem,x.aberturas]))); }
+      $('statsnote').textContent=ps.length?'Sem nomes: cada pessoa é um telemóvel ou computador diferente. Os teus dispositivos não entram.':'Ainda sem visitas de outras pessoas. Os teus dispositivos não entram.';
     }
     async function load(code,fromForm){
       $('statsnote').textContent='A carregar.';
       try{
-        const r=await fetch(SB+'rpc/keybpm_stats',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_code:code})});
+        const r=await fetch(SB+'rpc/keybpm_stats',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_code:code,p_visitor:(()=>{try{return localStorage.getItem('kb_v');}catch(e){return null;}})()})});
         if(!r.ok){ $('statsnote').textContent=(r.status===401||r.status===403)?'Código errado.':'Não deu para carregar ('+r.status+').'; if(!fromForm&&(r.status===401||r.status===403)){try{localStorage.removeItem('kb_admin');}catch(e){} dispatchEvent(new Event('kb-admin')); $('statsform').hidden=false; $('statsout').hidden=true;} return; }
         const d=await r.json();
         try{localStorage.setItem('kb_admin',code);}catch(e){} dispatchEvent(new Event('kb-admin'));
