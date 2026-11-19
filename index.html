@@ -147,6 +147,41 @@ svg text.cn{font-size:11px;fill:var(--muted)}
 .stattbl th{font-weight:500;color:var(--muted);text-align:right;padding:6px 0}
 .stattbl td{text-align:right;padding:6px 0;border-top:1px solid var(--rule)}
 .stattbl th:first-child,.stattbl td:first-child{text-align:left}
+.tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);border:1.5px solid var(--accent);border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:2px}
+body.setmode .reading,body.setmode section.block:not(#mix),body.setmode footer,body.setmode #setbtn,body.setmode .lead{display:none}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nowname{font-size:22px;font-weight:600;line-height:1.2;margin:6px 0 4px;overflow-wrap:anywhere}
+.nowrow{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nownum{font-size:76px;font-weight:800;line-height:.95;letter-spacing:-.02em;font-variation-settings:"opsz" 96,"wdth" 78;font-variant-numeric:tabular-nums}
+.nownum+span{font-size:16px;color:var(--muted);margin-left:8px}
+.nowkey{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:15px}
+.nowkey .badge{width:64px;height:64px;font-size:24px}
+.small{font-size:13px;color:var(--muted)}
+.fader{margin:16px 0 4px}
+.fadhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.fadhead b{font-size:15px;font-weight:600}
+.fadval{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;font-variation-settings:"opsz" 32,"wdth" 85}
+.fader input[type=range]{width:100%;height:44px;margin:2px 0 0;accent-color:var(--accent);cursor:pointer;touch-action:pan-y}
+.fadscale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.nowlinks{display:flex;gap:16px;flex-wrap:wrap;padding-top:12px}
+.mixin{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin:12px 0 4px}
+.mixin label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.mixin input,.mixin select{font:inherit;font-size:17px;font-weight:600;color:var(--fg);background:transparent;border:0;border-bottom:1.5px solid var(--fg);border-radius:0;padding:6px 0;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.mixin input:focus-visible,.mixin select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.nexthead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-top:1.5px solid var(--fg);margin-top:22px;padding:16px 0 6px}
+.srow{display:flex;align-items:center;gap:12px;min-height:64px;padding:6px 0;border:0;border-top:1px solid var(--rule);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
+.srow:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.srow .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);flex:none;animation:none}
+.srow .dot.drum{background:transparent;border:2.5px solid var(--boost)}
+.srow .sm{flex:1;min-width:0;display:flex;flex-direction:column}
+.srow .sn{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .sp{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;font-variation-settings:"opsz" 32,"wdth" 85}
+.sopen{padding:4px 0 16px 26px;display:grid;gap:12px;justify-items:start;font-size:14px;color:var(--muted)}
+.sopen b{color:var(--fg)}
+.outside{border-top:1.5px solid var(--fg);margin-top:12px;padding:14px 0 4px;display:grid;gap:4px;font-size:15px}
+.setfoot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding-top:14px}
+.ren{display:flex;gap:8px;align-items:center;flex:1}
+.ren input{font:inherit;font-size:14px;color:var(--fg);background:transparent;border:0;border-bottom:1.5px solid var(--fg);border-radius:0;padding:3px 0;flex:1;min-width:0}
 footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid var(--rule)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -160,6 +195,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     <div class="actions" id="startbtns">
       <button class="btn" id="mic">Gravar com o microfone</button>
       <button class="btn ghost" id="pick">Escolher gravação</button>
+      <button class="btn ghost" id="setbtn" hidden>Modo set</button>
     </div>
     <input class="hidden-input" type="file" id="file">
     <div class="recpanel" id="recpanel" hidden>
@@ -175,6 +211,12 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     </details>
     <p class="status" id="status"></p>
   </header>
+
+  <section class="block" id="mix" hidden>
+    <div class="histhead"><h2>Modo set<span class="tag">só tu</span></h2><button class="lnk" id="mxexit" type="button">sair do modo set</button></div>
+    <div id="mxnow"></div>
+    <div id="mxnext"></div>
+  </section>
 
   <section class="reading">
     <div class="read">
@@ -444,6 +486,64 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
 
 </script>
 <script>
+// ---- O que entra a seguir. Regra: com o ritmo acertado, a afinação entre dois discos só depende dos BPM originais.
+// s = 12·log2(BPM do que toca ÷ BPM do que entra) é quantos meios-tons o disco novo sobe; só afina perto de um inteiro,
+// e cada meio-tom são 7 casas na roda Camelot.
+(function (root) {
+  const codeOf = (n, L) => (((n - 1) % 12 + 12) % 12 + 1) + L;
+  const REL = [
+    { id: 'same', label: 'mesma key', rank: 0, off: [[0, false]] },
+    { id: 'near', label: 'vizinha', rank: 1, off: [[1, false], [-1, false]] },
+    { id: 'rel', label: 'relativa', rank: 1, off: [[0, true]] },
+  ];
+  function shift(code, k) { return codeOf(parseInt(code) + 7 * k, code.slice(-1)); }
+  function relation(playing, sounding) {
+    const n = parseInt(playing), L = playing.slice(-1), o = L === 'A' ? 'B' : 'A';
+    for (const r of REL) for (const [d, flip] of r.off) if (codeOf(n + d, flip ? o : L) === sounding) return r;
+    return null;
+  }
+  function wanted(playing) {
+    const n = parseInt(playing), L = playing.slice(-1), o = L === 'A' ? 'B' : 'A', out = [];
+    for (const r of REL) for (const [d, flip] of r.off) out.push({ code: codeOf(n + d, flip ? o : L), rel: r });
+    return out;
+  }
+  // bpm e code: valores da capa do disco que toca; opt.pitch: pitch a que ele está (fração); opt.range em %; opt.cents: tolerância
+  function windows(bpm, code, opt) {
+    const floor = bpm * (1 + (opt.pitch || 0)), range = opt.range / 100, tol = Math.pow(2, opt.cents / 1200);
+    const minB = floor / (1 + range), maxB = floor / (1 - range), out = [];
+    for (let k = -6; k <= 6; k++) {
+      const centre = bpm / Math.pow(2, k / 12);
+      const lo = Math.max(centre / tol, minB), hi = Math.min(centre * tol, maxB);
+      if (lo > hi) continue;
+      out.push({ k, centre, lo, hi, pitch: floor / centre - 1, pitchLo: floor / hi - 1, pitchHi: floor / lo - 1,
+        keys: wanted(code).map(w => ({ code: shift(w.code, -k), rel: w.rel })) });
+    }
+    return out.sort((a, b) => Math.abs(a.k) - Math.abs(b.k) || b.k - a.k);
+  }
+  function match(bpm, code, rec, opt) {
+    const floor = bpm * (1 + (opt.pitch || 0)), range = opt.range / 100;
+    let best = null;
+    for (const f of [1, 2, 0.5]) {
+      const b2 = rec.bpm * f, pitch = floor / b2 - 1;
+      if (Math.abs(pitch) > range + 1e-9) continue;
+      const s = 12 * Math.log2(bpm / b2), k = Math.round(s), cents = (s - k) * 100;
+      const sounding = shift(rec.camelot, k), rel = relation(code, sounding);
+      const m = { rec, factor: f, bpm: b2, pitch, k, cents, sounding, rel, inTune: Math.abs(cents) <= opt.cents };
+      if (!best || (m.inTune && m.rel && !(best.inTune && best.rel))) best = m;
+    }
+    return best;
+  }
+  function plan(bpm, code, recs, opt) {
+    const ms = recs.map(r => match(bpm, code, r, opt)).filter(Boolean);
+    const fits = ms.filter(m => m.inTune && m.rel).sort((a, b) => a.rel.rank - b.rel.rank || Math.abs(a.cents) - Math.abs(b.cents));
+    const drums = ms.filter(m => !(m.inTune && m.rel)).sort((a, b) => Math.abs(a.pitch) - Math.abs(b.pitch));
+    return { floor: bpm * (1 + (opt.pitch || 0)), windows: windows(bpm, code, opt), fits, drums, out: recs.length - ms.length };
+  }
+  const api = { plan, windows, match, shift, relation, codeOf };
+  if (typeof module !== 'undefined') module.exports = api; else root.MixLogic = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
 (function(){
   const $=id=>document.getElementById(id);
   const SAMPLE={"bpm":131.11232845951025,"conf":0.2914095278919915,"key":{"root":8,"mode":"minor","score":0.732695080424244,"name":"G♯ minor","namePt":"Sol♯ menor","camelot":"1A"},"cands":[{"name":"G♯ minor","camelot":"1A","score":0.732695080424244},{"name":"G♯ major","camelot":"4B","score":0.713472235565271},{"name":"C♯ minor","camelot":"12A","score":0.5770019799472417},{"name":"C♯ major","camelot":"3B","score":0.49288521895715365},{"name":"D♯ major","camelot":"5B","score":0.35022561785518147}],"kconf":0.2774770587041924,"chroma":[0.043635467809421256,0.125000909647957,0.011579993618411473,0.16335702821810982,0.12789622328386482,0.01517013709934216,0.03771695326952263,0.045868576873832646,0.25846757037685925,0.05577162606864202,0.11077254717632394,0.004762966557713138],"tuning":37.5265275368385,"dur":15.977369614512472,"rms":0.10396875483648639};
@@ -559,15 +659,15 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
       $('statsnote').textContent='A carregar.';
       try{
         const r=await fetch(SB+'rpc/keybpm_stats',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_code:code})});
-        if(!r.ok){ $('statsnote').textContent=(r.status===401||r.status===403)?'Código errado.':'Não deu para carregar ('+r.status+').'; if(!fromForm&&(r.status===401||r.status===403)){try{localStorage.removeItem('kb_admin');}catch(e){} $('statsform').hidden=false; $('statsout').hidden=true;} return; }
+        if(!r.ok){ $('statsnote').textContent=(r.status===401||r.status===403)?'Código errado.':'Não deu para carregar ('+r.status+').'; if(!fromForm&&(r.status===401||r.status===403)){try{localStorage.removeItem('kb_admin');}catch(e){} dispatchEvent(new Event('kb-admin')); $('statsform').hidden=false; $('statsout').hidden=true;} return; }
         const d=await r.json();
-        try{localStorage.setItem('kb_admin',code);}catch(e){}
+        try{localStorage.setItem('kb_admin',code);}catch(e){} dispatchEvent(new Event('kb-admin'));
         $('statsform').hidden=true; $('statsout').hidden=false; $('statscode').value='';
         show(d);
       }catch(e){ $('statsnote').textContent='Sem ligação.'; }
     }
     $('statsform').onsubmit=e=>{e.preventDefault(); const c=$('statscode').value.trim(); if(c) load(c,true);};
-    $('statsout').onclick=()=>{try{localStorage.removeItem('kb_admin');}catch(e){} $('statsbody').textContent=''; $('statsnote').textContent=''; $('statsform').hidden=false; $('statsout').hidden=true; if(location.hash!=='#stats') $('stats').hidden=true;};
+    $('statsout').onclick=()=>{try{localStorage.removeItem('kb_admin');}catch(e){} dispatchEvent(new Event('kb-admin')); $('statsbody').textContent=''; $('statsnote').textContent=''; $('statsform').hidden=false; $('statsout').hidden=true; if(location.hash!=='#stats') $('stats').hidden=true;};
     function init(){ const c=get(); if(location.hash==='#stats'||c){ $('stats').hidden=false; if(c){ $('statsform').hidden=true; load(c,false); } } }
     addEventListener('hashchange',init); init();
   })();
@@ -644,7 +744,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
         const [yes,no]=act.querySelectorAll('button');
         yes.onclick=async()=>{ confirmId=null; if(playingId===rec.id){player.pause();playingId=null;} try{ await removeRec(rec); if(currentId===rec.id) currentId=null; }catch(e){ say('Não deu para apagar ('+(e&&(e.message||e.code)||e)+').',true); } renderHist(); };
         no.onclick=()=>{confirmId=null;renderHist();};
-      } else { act.innerHTML='<button class="lnk" type="button">Apagar</button>'; act.querySelector('button').onclick=()=>{confirmId=rec.id;renderHist();}; }
+      } else { act.innerHTML='<button class="lnk" type="button">Apagar</button>'; act.querySelector('button').onclick=()=>{confirmId=rec.id;renderHist();}; privLinks(act,rec); }
       li.querySelector('.play').onclick=()=>togglePlay(rec);
       li.querySelector('.recmain').onclick=()=>{ showRec(rec); window.scrollTo({top:0,behavior:'smooth'}); };
       ul.appendChild(li);
@@ -661,6 +761,143 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
   $('sort').onchange=e=>{sortMode=e.target.value;renderHist();};
   store.listeners.push(()=>{ renderHist(); if(!everAnalysed&&!currentId&&store.recs.length){ const latest=store.recs.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0]; showRec(latest); } });
   initStore();
+
+  // ---- privado: modo set. Só existe em dispositivos onde o código de acesso já foi aceite.
+  // Em cima o disco que está a tocar e o ponto do pitch; em baixo os discos do histórico que entram, com o pitch a pôr em cada um.
+  const isPriv=()=>{try{return !!localStorage.getItem('kb_admin');}catch(e){return false;}};
+  let renameId=null, openId=null, pickOpen=false, handOpen=false, keySel=null;
+  const mix={bpm:null,key:'8A',pitch:0,range:10,from:null,name:''};
+  try{ const sv=JSON.parse(localStorage.getItem('kb_mix')||'null'); if(sv){ Object.assign(mix,sv); mix.bpm=parseFloat(String(mix.bpm).replace(',','.'))||null; mix.pitch=parseFloat(mix.pitch)||0; mix.range=parseInt(mix.range)||10; } }catch(e){}
+  const pct=v=>(Math.abs(v)<0.0005?'0,0':(v>0?'+':'−')+Math.abs(v*100).toFixed(1).replace('.',','))+' %';
+  const bpmTxt=v=>fmt(v).replace('.',',');
+  const mk=(t,cls,txt)=>{const e=document.createElement(t); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e;};
+  const lnk=(txt,fn)=>{const b=mk('button','lnk',txt); b.type='button'; b.onclick=fn; return b;};
+  const hasNow=()=>mix.bpm>=50&&mix.bpm<=250;
+  const setOn=()=>isPriv()&&document.body.classList.contains('setmode');
+  const saveMix=()=>{ try{localStorage.setItem('kb_mix',JSON.stringify(mix));}catch(e){} };
+  const clampPitch=v=>Math.max(-mix.range,Math.min(mix.range,Math.round(v*2)/2));
+  async function updateRec(rec){
+    if(store.mode==='cloud'){ await store.db.collection('recordings').doc(rec.id).set(rec); }
+    else if(store.mode==='local'){ await idbPut('recs',rec); store.recs=await idbAll(); emit(); }
+  }
+  function privLinks(act,rec){
+    if(!isPriv()) return;
+    if(renameId===rec.id){
+      act.textContent='';
+      const f=mk('form','ren'), inp=mk('input'), ok=mk('button','lnk','Guardar'), no=lnk('Cancelar',()=>{renameId=null;renderHist();});
+      inp.type='text'; inp.value=rec.name||''; inp.placeholder='Artista, faixa'; inp.setAttribute('aria-label','Nome do disco'); ok.type='submit';
+      f.append(inp,ok,no); act.appendChild(f);
+      f.onsubmit=async e=>{ e.preventDefault(); const v=inp.value.trim(); renameId=null; if(v&&v!==rec.name){ try{ await updateRec(Object.assign({},rec,{name:v})); if(mix.from===rec.id){ mix.name=v; saveMix(); } }catch(err){ say('Não deu para mudar o nome ('+(err&&(err.message||err.code)||err)+').',true); } } renderHist(); };
+      setTimeout(()=>{try{inp.focus();inp.select();}catch(e){}},0);
+      return;
+    }
+    act.prepend(lnk('A tocar',()=>setPlaying(rec,0)), lnk('Mudar nome',()=>{renameId=rec.id;confirmId=null;renderHist();}));
+  }
+  function enterSet(on){
+    document.body.classList.toggle('setmode',!!on); $('mix').hidden=!on;
+    try{ if(on) localStorage.setItem('kb_set','1'); else localStorage.removeItem('kb_set'); }catch(e){}
+    if(on){ renderNow(); window.scrollTo({top:0}); }
+  }
+  // rec: gravação do histórico (ou objeto com bpm, root, mode, name); pitch: fração a que o disco entrou
+  function setPlaying(rec,pitch){
+    const k=keyObj(rec.root,rec.mode);
+    mix.bpm=rec.bpm; mix.key=k.camelot; mix.from=rec.id||null; mix.name=rec.name||'Sem nome'; mix.pitch=clampPitch((pitch||0)*100);
+    openId=null; pickOpen=false; handOpen=false; saveMix();
+    if(!setOn()) enterSet(true); else { renderNow(); window.scrollTo({top:0,behavior:'smooth'}); }
+  }
+  function renderNow(){
+    if(!setOn()) return;
+    const host=$('mxnow'); host.textContent='';
+    if(hasNow()){
+      host.appendChild(mk('div','eyebrow','A tocar agora'));
+      host.appendChild(mk('div','nowname',mix.name||'Escrito à mão'));
+      const row=mk('div','nowrow'), left=mk('div'), num=mk('span','nownum'), right=mk('div','nowkey');
+      left.append(num,mk('span',null,'bpm')); right.append(mk('span','badge',mix.key),mk('span',null,SHORT[mix.key])); row.append(left,right); host.appendChild(row);
+      const cover=mk('div','small'); host.appendChild(cover);
+      const fad=mk('div','fader'), fh=mk('div','fadhead'), fl=mk('div'), fv=mk('span','fadval'), inp=mk('input'), sc=mk('div','fadscale');
+      fl.append(mk('b',null,'Pitch deste disco'),mk('div','small','arrasta até onde tens o fader'));
+      fh.append(fl,fv);
+      inp.type='range'; inp.min=-mix.range; inp.max=mix.range; inp.step=0.5; inp.value=mix.pitch; inp.id='mxfader'; inp.setAttribute('aria-label','Pitch do disco que está a tocar, em percentagem');
+      sc.append(mk('span',null,'−'+mix.range+' %'),mk('span',null,'0'),mk('span',null,'+'+mix.range+' %'));
+      fad.append(fh,inp,sc); host.appendChild(fad);
+      const paint=()=>{ num.textContent=bpmTxt(mix.bpm*(1+mix.pitch/100)); fv.textContent=pct(mix.pitch/100); cover.textContent='Na capa: '+bpmTxt(mix.bpm)+' BPM'; inp.setAttribute('aria-valuetext',pct(mix.pitch/100)); };
+      inp.addEventListener('input',()=>{ mix.pitch=parseFloat(inp.value)||0; saveMix(); paint(); renderNext(); });
+      paint();
+    } else {
+      host.appendChild(mk('div','eyebrow','A tocar agora'));
+      host.appendChild(mk('p','histnote','Diz que disco está a tocar: grava-o com o microfone, escolhe um do histórico ou escreve os valores da capa.'));
+      if(store.recs.length&&!handOpen) pickOpen=true;
+    }
+    const links=mk('div','nowlinks');
+    links.append(lnk(pickOpen?'fechar a lista':(hasNow()?'trocar de disco':'escolher do histórico'),()=>{pickOpen=!pickOpen;handOpen=false;renderNow();}),
+                 lnk(handOpen?'fechar':'escrever à mão',()=>{handOpen=!handOpen;pickOpen=false;renderNow();}));
+    host.appendChild(links);
+    if(pickOpen){
+      if(!store.recs.length) host.appendChild(mk('p','histnote','O histórico ainda está vazio. Grava o primeiro disco.'));
+      else { const ul=mk('div'); for(const rec of sorted()){ const k=keyObj(rec.root,rec.mode), b=mk('button','srow'); b.type='button'; const m=mk('span','sm'); m.append(mk('span','sn',rec.name||'Sem nome'),mk('span','small',bpmTxt(rec.bpm)+' BPM, '+k.camelot)); b.append(m); b.onclick=()=>setPlaying(rec,0); ul.appendChild(b); } host.appendChild(ul); }
+    }
+    if(handOpen){
+      const g=mk('div','mixin'), l1=mk('label',null,'BPM na capa'), l2=mk('label',null,'Key na capa'), ib=mk('input'), sel=mk('select');
+      ib.type='text'; ib.inputMode='decimal'; ib.autocomplete='off'; ib.placeholder='125'; ib.id='mxbpm'; ib.value=hasNow()?bpmTxt(mix.bpm):'';
+      sel.id='mxkey'; for(const L of ['A','B']) for(let n=1;n<=12;n++){ const o=mk('option',null,n+L+'  '+SHORT[n+L]); o.value=n+L; sel.appendChild(o); } sel.value=mix.key;
+      l1.appendChild(ib); l2.appendChild(sel); g.append(l1,l2); host.appendChild(g);
+      const done=lnk('usar estes valores',()=>{ const v=parseFloat(ib.value.replace(',','.')); if(!(v>=50&&v<=250)){ say('Escreve um BPM entre 50 e 250.',true); return; } const c=sel.value, L=c.slice(-1), n=parseInt(c); const root=Object.keys(L==='B'?CM:Cm).find(r=>(L==='B'?CM:Cm)[r]===c); setPlaying({bpm:v,root:+root,mode:L==='B'?'major':'minor',name:'Escrito à mão'},0); });
+      host.appendChild(done);
+    }
+    renderNext();
+  }
+  function why(m,playKey){
+    const cover='Na capa: '+bpmTxt(m.rec.bpm)+' BPM, '+m.rec.camelot+'. ';
+    if(!m.inTune) return cover+'A este pitch fica entre duas keys. Mistura só a bateria e mantém a mistura curta.';
+    if(!m.rel) return cover+'Entra afinado, mas a soar em '+m.sounding+', que não combina com '+playKey+'. Mistura só a bateria.';
+    const how=m.rel.id==='same'?'a mesma key do que está a tocar':(m.rel.id==='near'?'vizinha de '+playKey+' na roda':'a relativa de '+playKey);
+    return cover+(m.k===0?'Fica em ':'A este pitch passa a soar em ')+m.sounding+', '+how+'.';
+  }
+  function renderNext(){
+    if(!setOn()) return;
+    const host=$('mxnext'); host.textContent=''; if(!hasNow()) return;
+    const recs=store.recs.filter(r=>r.id!==mix.from).map(r=>({id:r.id,name:r.name||'Sem nome',bpm:r.bpm,camelot:keyObj(r.root,r.mode).camelot,src:r}));
+    const pl=MixLogic.plan(mix.bpm,mix.key,recs,{pitch:mix.pitch/100,range:mix.range,cents:25});
+    const head=mk('div','nexthead'); head.append(mk('div','eyebrow','A seguir, da tua mala'),mk('div','small','pitch a pôr')); host.appendChild(head);
+    const all=pl.fits.map(m=>[m,true]).concat(pl.drums.map(m=>[m,false]));
+    if(!recs.length) host.appendChild(mk('p','histnote','Ainda não há outros discos no histórico. Grava-os e dá-lhes nome para aparecerem aqui.'));
+    else if(!all.length) host.appendChild(mk('p','histnote','Nenhum disco do histórico cabe no pitch a partir daqui.'));
+    for(const [m,ok] of all){
+      const b=mk('button','srow'); b.type='button'; b.setAttribute('aria-expanded',openId===m.rec.id?'true':'false');
+      const d=mk('span','dot'+(ok?'':' drum')); d.setAttribute('aria-hidden','true');
+      const mm=mk('span','sm'); mm.append(mk('span','sn',m.rec.name),mk('span','small',bpmTxt(m.rec.bpm)+(m.factor===2?' (×2)':m.factor===.5?' (÷2)':'')+' BPM, '+m.rec.camelot+', '+(ok?'entra limpo':'só bateria')));
+      b.append(d,mm,mk('span','sp',pct(m.pitch)));
+      b.onclick=()=>{ openId=openId===m.rec.id?null:m.rec.id; renderNext(); };
+      host.appendChild(b);
+      if(openId===m.rec.id){
+        const o=mk('div','sopen'); o.appendChild(mk('div',null,why(m,mix.key)));
+        const go=mk('button','btn ghost','Lancei este disco a '+pct(m.pitch)); go.type='button'; go.onclick=()=>setPlaying(m.rec.src,m.pitch); o.appendChild(go); host.appendChild(o);
+      }
+    }
+    if(pl.windows.length){
+      const out=mk('div','outside'); out.appendChild(mk('div','eyebrow','Fora da mala, procura'));
+      pl.windows.forEach(w=>{ const ln=mk('div'); ln.appendChild(mk('b',null,Math.round(w.lo)+' a '+Math.round(w.hi)+' BPM')); const ks=w.keys.map(x=>x.code); ln.appendChild(document.createTextNode(' na capa, em '+ks.slice(0,-1).join(', ')+' ou '+ks[ks.length-1])); out.appendChild(ln); });
+      host.appendChild(out);
+    }
+    const foot=mk('div','setfoot'), lab=mk('label','sort','Alcance do teu pitch '), sel=mk('select');
+    [8,10,16].forEach(v=>{const o=mk('option',null,'±'+v+' %'); o.value=v; sel.appendChild(o);}); sel.value=mix.range; sel.id='mxrange';
+    sel.onchange=()=>{ mix.range=parseInt(sel.value); mix.pitch=clampPitch(mix.pitch); saveMix(); renderNow(); };
+    lab.appendChild(sel); foot.appendChild(lab);
+    if(pl.out) foot.appendChild(mk('span','small',pl.out+(pl.out===1?' disco fora do alcance':' discos fora do alcance')));
+    host.appendChild(foot);
+  }
+  function initMix(){
+    const on=isPriv(); $('setbtn').hidden=!on;
+    let want=false; try{ want=on&&!!localStorage.getItem('kb_set'); }catch(e){}
+    if(!on){ renameId=null; document.body.classList.remove('setmode'); $('mix').hidden=true; }
+    else if(want&&!setOn()) enterSet(true);
+    renderHist();
+  }
+  $('setbtn').onclick=()=>enterSet(true);
+  $('mxexit').onclick=()=>enterSet(false);
+  addEventListener('kb-admin',initMix);
+  store.listeners.push(()=>{ if(setOn()) renderNow(); });
+  initMix();
 
   // ---- ficheiros
   const status=$('status');
@@ -690,7 +927,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     render(recToR(rec),label);
     say('Pronto. Se o pulso parecer lento ou rápido demais, usa ÷2 ou ×2.');
     if(store.mode!=='none'){
-      try{ await saveRec(rec,blob); currentId=rec.id; renderHist(); }
+      try{ await saveRec(rec,blob); currentId=rec.id; renderHist(); if(setOn()) setPlaying(rec,0); }
       catch(e){ console.warn(e); say('Analisado, mas não deu para guardar no histórico ('+(e&&(e.message||e.code)||e)+').',true); }
     }
   }
