@@ -138,6 +138,15 @@ svg text.cn{font-size:11px;fill:var(--muted)}
 .lnk{font:inherit;font-size:13px;background:none;border:0;padding:0;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .lnk.danger{color:var(--boost)}
 .q{color:var(--muted)}
+.stats-in{font:inherit;font-size:15px;padding:10px 12px;border:1.5px solid var(--fg);border-radius:4px;background:transparent;color:var(--fg);min-width:0;flex:1 1 160px;max-width:240px}
+.stats-in:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.statnums{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:6px 0 18px}
+.statnums b{display:block;font-size:40px;font-weight:800;line-height:1;font-variation-settings:"opsz" 96,"wdth" 78;font-variant-numeric:tabular-nums}
+.statnums span{font-size:13px;color:var(--muted)}
+.stattbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:18px}
+.stattbl th{font-weight:500;color:var(--muted);text-align:right;padding:6px 0}
+.stattbl td{text-align:right;padding:6px 0;border-top:1px solid var(--rule)}
+.stattbl th:first-child,.stattbl td:first-child{text-align:left}
 footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid var(--rule)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -205,6 +214,13 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     <p class="histnote" id="histnote">A carregar o histórico.</p>
     <ul class="hist" id="hist"></ul>
     <audio id="player" preload="none"></audio>
+  </section>
+
+  <section class="block" id="stats" hidden>
+    <div class="histhead"><h2>Utilização</h2><button class="lnk" id="statsout" hidden>sair neste dispositivo</button></div>
+    <form class="actions" id="statsform"><input class="stats-in" type="password" id="statscode" placeholder="Código de acesso" autocomplete="off"><button class="btn" type="submit">Ver</button></form>
+    <p class="histnote" id="statsnote"></p>
+    <div id="statsbody"></div>
   </section>
 
   <footer id="meta"></footer>
@@ -506,6 +522,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
   function track(ev){
     try{
       if(!/\.github\.io$/.test(location.hostname)) return;
+      try{ if(localStorage.getItem('kb_admin')) return; }catch(e){}
       let v=null; try{ v=localStorage.getItem('kb_v'); if(!v){ v=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()); localStorage.setItem('kb_v',v);} }catch(e){}
       let ref=''; try{ ref=document.referrer?new URL(document.referrer).hostname:''; }catch(e){}
       const K='sb_publishable_aJFRV_nTZHZgyFXInXkzRA_7mQNXkyO';
@@ -515,6 +532,45 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     }catch(e){}
   }
   track('open');
+
+  // ---- utilização: só aparece com #stats no endereço ou num dispositivo onde o código já foi aceite; os números só saem do servidor com o código certo
+  (function(){
+    const SB='https://iwgwyhhoqcqlyycikxsy.supabase.co/rest/v1/', K='sb_publishable_aJFRV_nTZHZgyFXInXkzRA_7mQNXkyO';
+    const get=()=>{try{return localStorage.getItem('kb_admin');}catch(e){return null;}};
+    const el=(t,txt)=>{const e=document.createElement(t); if(txt!=null) e.textContent=txt; return e;};
+    function table(heads,rows){
+      const t=el('table'); t.className='stattbl';
+      const hr=el('tr'); heads.forEach(h=>hr.appendChild(el('th',h))); t.appendChild(hr);
+      rows.forEach(r=>{const tr=el('tr'); r.forEach(c=>tr.appendChild(el('td',String(c)))); t.appendChild(tr);});
+      return t;
+    }
+    function show(d){
+      const b=$('statsbody'); b.textContent='';
+      const n=el('div'); n.className='statnums';
+      [['pessoas','pessoas'],['aberturas','aberturas'],['analises','análises']].forEach(([k,l])=>{const c=el('div'); c.appendChild(el('b',String((d.total&&d.total[k])||0))); c.appendChild(el('span',l)); n.appendChild(c);});
+      b.appendChild(n);
+      const dias=d.dias||[];
+      if(dias.length){ b.appendChild(table(['Dia','Pessoas','Aberturas','Análises'],dias.map(x=>[new Date(x.dia+'T12:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'short'}),x.pessoas,x.aberturas,x.analises]))); }
+      if((d.dispositivos||[]).length) b.appendChild(table(['Dispositivo','Pessoas'],d.dispositivos.map(x=>[x.device==='telemovel'?'Telemóvel':x.device==='pc'?'Computador':(x.device||'?'),x.pessoas])));
+      if((d.origens||[]).length) b.appendChild(table(['Origem','Aberturas'],d.origens.map(x=>[x.origem==='direto'?'Direto (link, bio, app)':x.origem,x.aberturas])));
+      $('statsnote').textContent=dias.length?'Tabela por dia: últimos 30 dias. Este dispositivo não é contado.':'Ainda sem visitas registadas. Este dispositivo não é contado.';
+    }
+    async function load(code,fromForm){
+      $('statsnote').textContent='A carregar.';
+      try{
+        const r=await fetch(SB+'rpc/keybpm_stats',{method:'POST',headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({p_code:code})});
+        if(!r.ok){ $('statsnote').textContent=(r.status===401||r.status===403)?'Código errado.':'Não deu para carregar ('+r.status+').'; if(!fromForm&&(r.status===401||r.status===403)){try{localStorage.removeItem('kb_admin');}catch(e){} $('statsform').hidden=false; $('statsout').hidden=true;} return; }
+        const d=await r.json();
+        try{localStorage.setItem('kb_admin',code);}catch(e){}
+        $('statsform').hidden=true; $('statsout').hidden=false; $('statscode').value='';
+        show(d);
+      }catch(e){ $('statsnote').textContent='Sem ligação.'; }
+    }
+    $('statsform').onsubmit=e=>{e.preventDefault(); const c=$('statscode').value.trim(); if(c) load(c,true);};
+    $('statsout').onclick=()=>{try{localStorage.removeItem('kb_admin');}catch(e){} $('statsbody').textContent=''; $('statsnote').textContent=''; $('statsform').hidden=false; $('statsout').hidden=true; if(location.hash!=='#stats') $('stats').hidden=true;};
+    function init(){ const c=get(); if(location.hash==='#stats'||c){ $('stats').hidden=false; if(c){ $('statsform').hidden=true; load(c,false); } } }
+    addEventListener('hashchange',init); init();
+  })();
 
   // ---- histórico: nuvem do artefacto quando existe, senão IndexedDB deste browser
   let everAnalysed=false, currentId=null, playingId=null, confirmId=null, sortMode='date';
