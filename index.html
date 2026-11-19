@@ -502,6 +502,20 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
 
   render(SAMPLE,'Exemplo: Gravação nova 15, 14 de outubro');
 
+  // ---- contador de uso anónimo (só na versão publicada): aberturas e análises, sem áudio nem resultados
+  function track(ev){
+    try{
+      if(!/\.github\.io$/.test(location.hostname)) return;
+      let v=null; try{ v=localStorage.getItem('kb_v'); if(!v){ v=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now()); localStorage.setItem('kb_v',v);} }catch(e){}
+      let ref=''; try{ ref=document.referrer?new URL(document.referrer).hostname:''; }catch(e){}
+      const K='sb_publishable_aJFRV_nTZHZgyFXInXkzRA_7mQNXkyO';
+      fetch('https://iwgwyhhoqcqlyycikxsy.supabase.co/rest/v1/keybpm_events',{method:'POST',keepalive:true,
+        headers:{'apikey':K,'Authorization':'Bearer '+K,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({event:ev,visitor:v,device:/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)?'telemovel':'pc',referrer:ref.slice(0,200),lang:(navigator.language||'').slice(0,20)})}).catch(()=>{});
+    }catch(e){}
+  }
+  track('open');
+
   // ---- histórico: nuvem do artefacto quando existe, senão IndexedDB deste browser
   let everAnalysed=false, currentId=null, playingId=null, confirmId=null, sortMode='date';
   const store={mode:'none',db:null,assets:null,idb:null,listeners:[],recs:[]};
@@ -614,6 +628,7 @@ footer{font-size:13px;color:var(--muted);padding-top:18px;border-top:1px solid v
     await new Promise(r=>setTimeout(r,20));
     const r=BPMKey.analyze(y.length>BPMKey.SR*180?y.subarray(0,BPMKey.SR*180):y);
     everAnalysed=true;
+    track('analysis');
     const rec={name:label,createdAt:new Date().toISOString(),bpm:r.tempo.bpm,conf:r.tempo.confidence,root:r.key.best.root,mode:r.key.best.mode,
       cands:r.key.candidates.slice(0,5).map(c=>({root:c.root,mode:c.mode,score:c.score})),kconf:r.key.confidence,chroma:r.chroma.map(v=>Math.round(v*1e4)/1e4),tuning:Math.round(r.tuning*10)/10,dur:r.duration,rms:r.rms};
     render(recToR(rec),label);
